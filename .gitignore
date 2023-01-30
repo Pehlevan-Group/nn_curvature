@@ -1,0 +1,39 @@
+# code 
+.vscode/
+.idea/
+
+# python
+__pycache__/
+.ipynb_notebooks/
+notebook/
+
+# data 
+data/*
+!data/.gitkeep
+
+# model 
+model/*
+!model/.gitkeep
+
+# images 
+img/*
+!img/demo/
+
+# other temp files 
+*.png 
+*.pt 
+*.gif 
+*.mp4
+
+# venv 
+curvature/
+
+# commands
+commands/
+
+# intermediaries
+*.err
+*.out
+
+# config update 
+config.toml
