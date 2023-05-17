@@ -26,7 +26,7 @@ def makevid_analytic(
     ax,
     plot_line=True,
     cmap="viridis",
-    label='log10 volume element'
+    label="log10 volume element",
 ):
     fig.set_tight_layout(True)
     L, M = np.meshgrid(
@@ -65,8 +65,8 @@ def makevid_analytic(
 
     ax.set_xlim(L.min() - 0.05, L.max() + 0.05)
     ax.set_ylim(M.min() - 0.05, M.max() + 0.05)
-    
-    ax.set_aspect('equal', adjustable='box')
+
+    ax.set_aspect("equal", adjustable="box")
 
     def animate(frame_num, data, sct):
 

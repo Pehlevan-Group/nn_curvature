@@ -5,6 +5,8 @@ training MNIST and store plane information
 # load packages
 import os
 import argparse
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -184,7 +186,7 @@ def main():
     y = torch.linspace(args.lower, args.upper, steps=args.steps).to(device)
 
     raw = torch.cartesian_prod(l, y)
-    scan = raw[:, [0]] * right_vec + raw[:, [1]] * up_vec  # orthogonal decomposition
+    scan = origin + raw[:, [0]] * right_vec + raw[:, [1]] * up_vec  # orthogonal decomposition
 
     # save mid and endpoints
     torch.save(first_num_sample, os.path.join(model_dir, "point_one.pt"))
@@ -208,6 +210,9 @@ def main():
         def nl(x):
             return torch.erf(x / (2 ** (1 / 2)))
 
+    elif args.nl == "ReLU":
+        nl = nn.ReLU()
+        warnings.warn("Caution: ReLU is not smooth")
     else:
         raise NotImplementedError(f"nl {args.nl} not supported")
     model = MLPSingle(

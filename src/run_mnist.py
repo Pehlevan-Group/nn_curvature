@@ -5,12 +5,15 @@ training MNIST
 # load packages
 import os
 import argparse
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
 
-parser = parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 
 # load file
 from data import mnist, mnist_small
@@ -19,6 +22,11 @@ from utils import effective_expansion, load_config, fileid, train_test_split
 
 # arguments
 parser.add_argument("--data", default="mnist", type=str, help="data tested")
+parser.add_argument(
+    "--test-size",
+    default=0.2, type=float,
+    help='the proportion of testing dataset'
+)
 
 # model params
 parser.add_argument("--w", default=30, type=int, help="tested widths")
@@ -80,6 +88,29 @@ parser.add_argument(
     help="the number of scan points for geometric quanities computations",
 )
 
+# for adding volume elements as a loss term
+parser.add_argument(
+    "--no-geometric-quantities",
+    action='store_true',
+    default=False,
+    help='turn on to skip logging geoemtric quantities'
+)
+parser.add_argument(
+    "--burnin",
+    default=2000,
+    type=int,
+    help='the burn in period to add volume element as an optimizer'
+)
+parser.add_argument(
+    "--_lambda",
+    default=100,
+    type=float,
+    help='the multiplier for the loss on the volume element term '
+)
+parser.add_argument('--ent-thr', default=0.5, type=float,
+                    help='the cutoff above which points are negelected')
+
+
 # technical
 parser.add_argument(
     "--no-gpu", default=False, action="store_true", help="turn on to disable gpu usage"
@@ -109,10 +140,21 @@ torch.set_default_dtype(torch.float64)
 
 
 def main():
+    # load mnist
+    if args.data == "mnist":
+        X, Y = mnist()
+    elif args.data == "mnist_small":
+        X, Y = mnist_small()
+    else:
+        raise NotImplementedError(f"dataset {args.dataset} not available")
+    X, Y = X.to(device), Y.to(device)
+
     # setup model paths and result paths
     model_id = (
         fileid("mnist", args) + f"_{args.target_digits[0]}_{args.target_digits[1]}"
     )
+    train_test_specifier = f'_ent{args.ent_thr}_bi{args.burnin}_l{args._lambda}'
+    model_id += train_test_specifier
     model_dir = os.path.join(paths["model_dir"], model_id)
     result_dir = os.path.join(paths["result_dir"], model_id)
     if not os.path.exists(model_dir):
@@ -124,15 +166,6 @@ def main():
 
     weightlist = []
     biaslist = []
-
-    # load mnist
-    if args.data == "mnist":
-        X, Y = mnist()
-    elif args.data == "mnist_small":
-        X, Y = mnist_small()
-    else:
-        raise NotImplementedError(f"dataset {args.dataset} not available")
-    X, Y = X.to(device), Y.to(device)
 
     # train test split
     n = X.shape[0]
@@ -173,11 +206,17 @@ def main():
         nl = nn.Sigmoid()
     elif args.nl == "Erf":
         nl = lambda x: torch.erf(x / (2 ** (1 / 2)))
+    elif args.nl == "ReLU":
+        nl = nn.ReLU()
+        warnings.warn("Caution: ReLU is not smooth")
     else:
         raise NotImplementedError(f"nl {args.nl} not supported")
     model = MLPSingle(
         width=w, output_dim=len(torch.unique(Y)), input_dim=X.shape[1], nl=nl
     ).to(device)
+
+    # init tb 
+    writer = SummaryWriter(result_dir)
 
     # init models
     weights_init(model)
@@ -210,6 +249,7 @@ def main():
     cnt = 0
     weightlist = []
     biaslist = []
+    softmax = nn.Softmax(dim=-1)
 
     # training
     for i in range(epochs):
@@ -227,6 +267,31 @@ def main():
             optimizer.zero_grad()
             y_hat = model(x_var)
             loss = loss_func(y_hat, y_var)
+
+            # optimize geometric quantites 
+            if i >= args.burnin:
+                y_hat_probs = softmax(y_hat)
+                entropies = - (y_hat_probs * y_hat_probs.log10()).sum(dim=-1)  # TODO: log10?
+                candidate_indices = torch.nonzero(entropies >= args.ent_thr).flatten()
+                num_candidates = candidate_indices.shape[0]
+                
+                # feed in by batch due to memory constraints
+                num_scan_loops = int(np.ceil(num_candidates / args.scanbatchsize))
+
+                geometric_loss = 0
+                for loop in range(num_scan_loops):
+                    start_idx = loop * args.scanbatchsize
+                    end_idx = (loop + 1) * args.scanbatchsize
+                    # autograd
+                    geometric_loss += effective_expansion(
+                        X[candidate_indices[start_idx:end_idx]],
+                        model.feature_map,
+                        k=args.k,
+                        thr=args.thr
+                    ).sum() / num_candidates  # normalize by number of candidates
+
+                loss -= args._lambda * geometric_loss
+
             loss.backward()
             optimizer.step()
 
@@ -235,6 +300,8 @@ def main():
                 num_correct += (torch.argmax(y_hat, dim=1) == y_var).float().sum()
 
         if i % args.print_freq == 0:
+            writer.add_scalar('Train/Loss', loss, i)
+
             # get test accuracy
             with torch.no_grad():
                 y_hat_test = model(X_test)
@@ -248,8 +315,11 @@ def main():
                     test_acc.item(),
                 )
             )
+            writer.add_scalar('Train/Acc', num_correct.item() / X_train.shape[0], i)
+            writer.add_scalar('Test/Acc', test_acc, i)
+            writer.flush()
 
-        if i % args.save_freq == 0:
+        if i % args.save_freq == 0 and not args.no_geometric_quantities:
             model.eval()
             with torch.no_grad():
                 # get geometric quantities
@@ -277,13 +347,14 @@ def main():
                 cnt += 1
 
     # save geometric evaluations
-    torch.save(model.to("cpu"), os.path.join(model_dir, "model.pt"))
-    torch.save(effective_volume.to("cpu"), os.path.join(model_dir, "eff_vol.pt"))
-    torch.save(predictions.to("cpu"), os.path.join(model_dir, "predictions.pt"))
+    if not args.no_geometric_quantities:
+        torch.save(model.to("cpu"), os.path.join(model_dir, "model.pt"))
+        torch.save(effective_volume.to("cpu"), os.path.join(model_dir, "eff_vol.pt"))
+        torch.save(predictions.to("cpu"), os.path.join(model_dir, "predictions.pt"))
 
-    # save model parameters
-    torch.save(weightlist, os.path.join(model_dir, "weightlist.pt"))
-    torch.save(biaslist, os.path.join(model_dir, "biaslist.pt"))
+        # save model parameters
+        torch.save(weightlist, os.path.join(model_dir, "weightlist.pt"))
+        torch.save(biaslist, os.path.join(model_dir, "biaslist.pt"))
 
 
 if __name__ == "__main__":

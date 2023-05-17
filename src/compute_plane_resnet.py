@@ -1,17 +1,17 @@
 """
-training cifar and store plane information
+load model and compute geometric quantities at plane positions
 """
 
 # load packages
 import os
 import argparse
+import warnings
+from tqdm import tqdm
 
 import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.backends.cudnn as cudnn
 
 # load file
 from utils import (
@@ -24,7 +24,7 @@ from model import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
 from data import cifar10, cifar10_clean, random_samples_by_targets
 
 # arguments
-parser = parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 
 parser.add_argument("--data", default="cifar10", type=str, help="data tested")
 
@@ -140,21 +140,22 @@ eigvals_epochs = set(args.eigvals_epochs)
 def main():
     # setup model paths and result paths
     args.w = args.model
-    model_id = (
+    load_model_id = fileid("resnet", args)
+    save_model_id = (
         fileid("cifar10_plane", args)
         + f"_{args.target_digits[0]}_{args.target_digits[1]}_{args.target_digits[2]}"
     )
-    model_dir = os.path.join(paths["model_dir"], model_id)
-    result_dir = os.path.join(paths["result_dir"], model_id)
-    if not os.path.exists(model_dir):
-        os.mkdir(model_dir)
+    load_model_dir = os.path.join(paths["model_dir"], load_model_id)
+    save_model_dir = os.path.join(paths["model_dir"], save_model_id)
+    result_dir = os.path.join(paths["result_dir"], save_model_id)
+    if not os.path.exists(load_model_dir):
+        raise Exception("Please run run_clr.py first")
+    if not os.path.exists(save_model_dir):
+        os.mkdir(save_model_dir)
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
 
     frames = len(args.save_epochs)
-
-    weightlist = []
-    biaslist = []
 
     # load mnist
     if args.data == "cifar10":
@@ -200,22 +201,22 @@ def main():
     y = torch.linspace(args.lower, args.upper, steps=args.steps)
 
     raw = torch.cartesian_prod(l, y)
-    scan = (
+    scan = origin + (
         raw[:, 0].reshape(-1, 1, 1, 1) * right_vec
         + raw[:, 1].reshape(-1, 1, 1, 1) * up_vec
     )  # orthogonal decomposition (stored at cpu first)
 
     # save clean mid and endpoints
-    torch.save(first_num_sample_clean, os.path.join(model_dir, "point_one.pt"))
-    torch.save(second_num_sample_clean, os.path.join(model_dir, "point_two.pt"))
-    torch.save(third_num_sample_clean, os.path.join(model_dir, "point_three.pt"))
-    torch.save(origin_clean, os.path.join(model_dir, "origin.pt"))
+    torch.save(first_num_sample_clean, os.path.join(save_model_dir, "point_one.pt"))
+    torch.save(second_num_sample_clean, os.path.join(save_model_dir, "point_two.pt"))
+    torch.save(third_num_sample_clean, os.path.join(save_model_dir, "point_three.pt"))
+    torch.save(origin_clean, os.path.join(save_model_dir, "origin.pt"))
 
     # store metrics
     num_samples = args.steps**2  # linearly interpolate with 64 bins
-    effective_volume = torch.zeros(frames + 1, num_samples, device=device)
-    entropy = torch.zeros(frames + 1, num_samples, device=device)
-    predictions = torch.zeros(frames + 1, num_samples, device=device)
+    effective_volume = torch.zeros(frames + 1, num_samples, device='cpu')
+    entropy = torch.zeros(frames + 1, num_samples, device='cpu')
+    predictions = torch.zeros(frames + 1, num_samples, device='cpu')
 
     # get model
     # select non linearity
@@ -230,6 +231,9 @@ def main():
         nl = nn.GELU()
     elif args.nl == "ELU":
         nl = nn.ELU()
+    elif args.nl == "ReLU":
+        nl = nn.ReLU()
+        warnings.warn("Caution: ReLU is not smooth")
     else:
         raise NotImplementedError(f"nl {args.nl} not supported")
 
@@ -248,138 +252,67 @@ def main():
         raise NotImplementedError(f"ResNet{args.model} not supported")
 
     # init models
-    loss_func = nn.CrossEntropyLoss()
     softmax = nn.Softmax(dim=1)
 
     # send to parallel
-    feature_map = model.feature_map  # extract feature map
     model = model.to(device)
-    if device.type == "cuda":
-        model = nn.DataParallel(model)
-        cudnn.benchmark = True  # reproducibility
-
-    # select optimizer
-    if args.opt == "sgd":
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=args.lr,
-            momentum=args.momentum,
-            weight_decay=args.weight_decay,
-        )
-    elif args.opt == "adam":
-        optimizer = optim.Adam(
-            model.parameters(),
-            lr=args.lr,
-            weight_decay=args.weight_decay
-            # ? amsgrad ?
-        )
-    else:
-        raise NotImplementedError(f"opt type {args.opt} not available")
 
     # set up training
-    epochs = args.epochs + 1
     cnt = 0
-    weightlist = []
-    biaslist = []
 
     # training
-    for i in range(epochs):
-        model.train()
+    for i in args.save_epochs:
+        print(f'--- epoch {i} ---')
+        model.load_state_dict(torch.load(os.path.join(load_model_dir, f'resnet_model_state_dict_e{i}.pt'), map_location=device))
+        model.eval()
+        feature_map = model.feature_map.to(device)
 
-        train_loss = 0
-        correct = 0
-        total = 0
-        for inputs, targets in train_loader:
-            inputs, targets = inputs.to(device), targets.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = loss_func(outputs, targets)
-            loss.backward()
-            optimizer.step()
+        with torch.no_grad():
+            # get geometric quantities
+            detarr = torch.zeros(num_samples).to(device)
+            cur_entropies = torch.zeros(num_samples).to(device)
+            cur_predictions = torch.zeros(num_samples).to(device)
 
-            # accuracy
-            with torch.no_grad():
-                train_loss += loss.item()
-                predicted = outputs.argmax(dim=1)
-                total += targets.size(0)
-                correct += predicted.eq(targets).sum().item()
-        train_acc = correct / total
+            # feed to computation by batch
+            num_scan_loops = int(np.ceil(num_samples / args.scanbatchsize))
+            for loop in tqdm(range(num_scan_loops)):
+                # find out scan range
+                start_idx = loop * args.scanbatchsize
+                end_idx = (loop + 1) * args.scanbatchsize
+                cur_scan = scan[start_idx:end_idx].to(device)
 
-        if i % args.print_freq == 0:
-            model.eval()
-            # get test accuracy
-            test_loss = 0
-            correct = 0
-            total = 0
-            with torch.no_grad():
-                for inputs, targets in test_loader:
-                    inputs, targets = inputs.to(device), targets.to(device)
-                    outputs = model(inputs)
-                    loss = loss_func(outputs, targets)
+                # expansion
+                detarr[start_idx:end_idx] = effective_expansion(
+                    cur_scan,
+                    feature_map,
+                    k=args.k,
+                    thr=args.thr,
+                ).squeeze()
 
-                    test_loss += loss.item()
-                    predicted = outputs.argmax(dim=1)
-                    total += targets.size(0)
-                    correct += predicted.eq(targets).sum().item()
+                # prediction
+                cur_outputs = model(cur_scan)
+                cur_outputs_softmax = softmax(cur_outputs)
 
-            test_acc = correct / total
+                # use log10 to compute entropy so that it ranges from 0 to 1 in a 10 class classification task
+                cur_entropy = -(
+                    cur_outputs_softmax * cur_outputs_softmax.log10()
+                ).sum(dim=1)
 
-            print(
-                "Epoch: {:04}, Train Loss: {:.5f}, Train Acc: {:.5f}, Test Loss: {:.5f} Test Acc: {:.5f}".format(
-                    i, train_loss, train_acc, test_loss, test_acc
+                cur_entropies[start_idx:end_idx] = cur_entropy
+                cur_predictions[start_idx:end_idx] = torch.argmax(
+                    cur_outputs, dim=1
                 )
-            )
 
-        if i in args.save_epochs:
-            model.eval()
-            with torch.no_grad():
-                # get geometric quantities
-                detarr = torch.zeros(num_samples).to(device)
-                cur_entropies = torch.zeros(num_samples).to(device)
-                cur_predictions = torch.zeros(num_samples).to(device)
+            # put back
+            effective_volume[cnt] = detarr.detach().cpu()
+            predictions[cnt] = cur_predictions.detach().cpu()
+            entropy[cnt] = cur_entropies.detach().cpu()
 
-                # feed to computation by batch
-                num_scan_loops = int(np.ceil(num_samples / args.scanbatchsize))
-                for loop in range(num_scan_loops):
-                    # find out scan range
-                    start_idx = loop * args.scanbatchsize
-                    end_idx = (loop + 1) * args.scanbatchsize
-                    cur_scan = scan[start_idx:end_idx].to(device)
+            # update
+            cnt += 1
 
-                    # expansion
-                    detarr[start_idx:end_idx] = effective_expansion(
-                        cur_scan,
-                        feature_map,
-                        k=args.k,
-                        thr=args.thr,
-                    ).squeeze()
-
-                    # prediction
-                    cur_outputs = model(cur_scan)
-                    cur_outputs_softmax = softmax(cur_outputs)
-
-                    # use log10 to compute entropy so that it ranges from 0 to 1 in a 10 class classification task
-                    cur_entropy = -(
-                        cur_outputs_softmax * cur_outputs_softmax.log10()
-                    ).sum(dim=1)
-
-                    cur_entropies[start_idx:end_idx] = cur_entropy
-                    cur_predictions[start_idx:end_idx] = torch.argmax(
-                        cur_outputs, dim=1
-                    )
-
-                # put back
-                effective_volume[cnt] = detarr
-                predictions[cnt] = cur_predictions
-                entropy[cnt] = cur_entropies
-
-                # get model params
-                weightlist.append(list(model.parameters())[0].clone())
-                biaslist.append(list(model.parameters())[1].clone())
-                cnt += 1
-
-        # eigenvalues
-        if i in eigvals_epochs:
+            # eigenvalues
+            
             # get metrics at anchor points
             first_J = batch_jacobian(
                 feature_map,
@@ -416,26 +349,21 @@ def main():
             # save
             torch.save(
                 first_eigvals.to("cpu"),
-                os.path.join(model_dir, f"first_eigvals_e{i}.pt"),
+                os.path.join(save_model_dir, f"first_eigvals_e{i}.pt"),
             )
             torch.save(
                 second_eigvals.to("cpu"),
-                os.path.join(model_dir, f"second_eigvals_e{i}.pt"),
+                os.path.join(save_model_dir, f"second_eigvals_e{i}.pt"),
             )
             torch.save(
                 third_eigvals.to("cpu"),
-                os.path.join(model_dir, f"third_eigvals_e{i}.pt"),
+                os.path.join(save_model_dir, f"third_eigvals_e{i}.pt"),
             )
 
     # save geometric evaluations
-    torch.save(model.to("cpu"), os.path.join(model_dir, "model.pt"))
-    torch.save(effective_volume.to("cpu"), os.path.join(model_dir, "eff_vol.pt"))
-    torch.save(entropy.to("cpu"), os.path.join(model_dir, "entropy.pt"))
-    torch.save(predictions.to("cpu"), os.path.join(model_dir, "predictions.pt"))
-
-    # save model parameters
-    torch.save(weightlist, os.path.join(model_dir, "weightlist.pt"))
-    torch.save(biaslist, os.path.join(model_dir, "biaslist.pt"))
+    torch.save(effective_volume.to("cpu"), os.path.join(save_model_dir, "eff_vol.pt"))
+    torch.save(entropy.to("cpu"), os.path.join(save_model_dir, "entropy.pt"))
+    torch.save(predictions.to("cpu"), os.path.join(save_model_dir, "predictions.pt"))
 
 
 if __name__ == "__main__":

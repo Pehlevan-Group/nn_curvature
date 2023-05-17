@@ -121,7 +121,9 @@ def main():
         ax,
     )
     # save
-    anima.save(os.path.join(result_dir, f"effvols_{model_id}.gif"), writer="pillow", dpi=300)
+    anima.save(
+        os.path.join(result_dir, f"effvols_{model_id}.gif"), writer="pillow", dpi=300
+    )
     plt.close()
 
 

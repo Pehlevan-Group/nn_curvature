@@ -6,6 +6,8 @@ train deeper network
 import os
 import random
 import argparse
+import warnings
+
 import numpy as np
 
 import torch
@@ -151,6 +153,9 @@ def main():
         nl = nn.Sigmoid()
     elif args.nl == "Erf":
         nl = lambda x: torch.erf(x / (2 ** (1 / 2)))
+    elif args.nl == "ReLU":
+        nl = nn.ReLU()
+        warnings.warn("Caution: ReLU is not smooth")
     else:
         raise NotImplementedError(f"nl {args.nl} not supported")
     model = MLPMultiple(dimensions, nl=nl).to(device)

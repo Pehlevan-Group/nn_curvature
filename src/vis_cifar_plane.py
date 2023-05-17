@@ -16,6 +16,12 @@ parser = parser = argparse.ArgumentParser()
 
 # model params
 parser.add_argument(
+    "--file", 
+    default='cifar10_plane',
+    type=str,
+    help='the prefix file to read from'
+)
+parser.add_argument(
     "--data",
     default="cifar10",
     type=str,
@@ -61,13 +67,6 @@ parser.add_argument("--lower", default=-1.0, type=float, help="the lower bound o
 parser.add_argument(
     "--steps", default=60, type=int, help="the steps to take in interpolation"
 )
-parser.add_argument(
-    "--eigvals-epochs",
-    default=[0, 50, 200],
-    type=int,
-    nargs="+",
-    help="the epochs to record eigenvalues of anchors",
-)
 
 parser.add_argument(
     "--ternary",
@@ -105,7 +104,7 @@ def main():
     # parse plot parameters
     args.w = args.model
     model_id = (
-        fileid("cifar10_plane", args)
+        fileid(args.file, args)
         + f"_{args.target_digits[0]}_{args.target_digits[1]}_{args.target_digits[2]}"
     )
     result_dir = os.path.join(paths["result_dir"], model_id)
@@ -173,17 +172,19 @@ def main():
             .detach()
             .cpu()
             .numpy()
-            for e in args.eigvals_epochs
+            for e in args.save_epochs
         ]
         fig, ax = plt.subplots()
         fig.set_tight_layout(True)
         for eigvals in eigvals_list:
             ax.plot(eigvals)
-        plt.legend(args.eigvals_epochs, title="epoch")
+        plt.legend(args.save_epochs, title="epoch")
         plt.title(r"$\log(\sqrt{\lambda_i})$ at " + f"{labels[int(anchor_num)]}")
         plt.ylabel(r"$\log(\sqrt{\lambda_i})$")
         plt.savefig(
-            os.path.join(result_dir, f"eigvals_by_epochs_{labels[int(anchor_num)]}.pdf"),
+            os.path.join(
+                result_dir, f"eigvals_by_epochs_{labels[int(anchor_num)]}.pdf"
+            ),
             bbox_inches="tight",
             dpi=300,
             facecolor="white",

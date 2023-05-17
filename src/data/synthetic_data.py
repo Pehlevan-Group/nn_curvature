@@ -7,6 +7,7 @@ import numpy as np
 from numpy.random import multivariate_normal
 from numpy.random import uniform
 from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
 
 import torch
 import torch.nn as nn
@@ -56,8 +57,8 @@ def noisyXORdata(numsamples=400):
     return X, Y
 
 
-def sindata(numsamples=400):
-
+def sindata(numsamples=400, seed=42):
+    np.random.seed(seed)  # for reproducibility
     sin = torch.zeros((numsamples, 2))
     sin.requires_grad_(False)
     sinlabels = torch.zeros((numsamples))
@@ -74,6 +75,18 @@ def sindata(numsamples=400):
 
     X, Y = unison_shuffled_copies(sin, sinlabels)
     return X, Y
+
+
+def noisy_sindata_train_test(numsamples=400, seed=42, std=1, test_size=0.2):
+    """noisy version of the sinusoidal data"""
+    X, Y = sindata(numsamples, seed)
+    # train test split
+    X_train, X_test, Y_train, Y_test = train_test_split(
+        X, Y, test_size=test_size, stratify=Y, random_state=seed
+    )
+    # perturbe
+    X_train = X_train + torch.normal(0, std, size=X_train.shape)
+    return X_train, X_test, Y_train, Y_test
 
 
 def sindata_full():

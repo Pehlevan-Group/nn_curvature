@@ -168,12 +168,11 @@ def main():
         fig,
         ax,
         plot_line=args.plot_line,
-        label='volume element'
+        label="volume element",
     )
     # save
     anima.save(
-        os.path.join(result_dir, f"expansion_{model_id}.gif"),
-        writer="pillow", dpi=300
+        os.path.join(result_dir, f"expansion_{model_id}.gif"), writer="pillow", dpi=300
     )
     plt.close()
 

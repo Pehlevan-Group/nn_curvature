@@ -1,27 +1,25 @@
 """
-training cifar10
+train resnet on cifar10, load model states at predefined epochs
 """
 
 # load packages
 import os
 import argparse
+import warnings
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
-
-parser = parser = argparse.ArgumentParser()
-
 # load file
 from data import cifar10, cifar10_clean, random_samples_by_targets
 from model import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
 from utils import effective_expansion, load_config, fileid
 
+parser = argparse.ArgumentParser()
 
 # arguments
 parser.add_argument("--data", default="cifar10", type=str, help="data tested")
@@ -52,15 +50,6 @@ parser.add_argument(
     nargs="+",
     help="specific epochs to compute and save geometric quantities",
 )
-parser.add_argument(
-    "--k", default=10, type=int, help="the number of eigenvalues to keep"
-)
-parser.add_argument(
-    "--thr",
-    default=-float("inf"),
-    type=float,
-    help="the threshold below which singular values are dropped in effective volume element computations; default no thresholding",
-)
 
 # opt
 parser.add_argument(
@@ -74,24 +63,6 @@ parser.add_argument("--lr", default=0.001, type=float, help="the learning rate f
 parser.add_argument("--momentum", default=0.9, type=float, help="the momentum in SGD")
 parser.add_argument(
     "--weight-decay", default=0, type=float, help="the weight decay for SGD"
-)
-
-# digit boundary
-parser.add_argument(
-    "--target-digits",
-    default=[7, 6],
-    nargs="+",
-    type=int,
-    help="the boundary digits to interpolate",
-)
-parser.add_argument(
-    "--steps", default=64, type=int, help="the steps to take in interpolation"
-)
-parser.add_argument(
-    "--scanbatchsize",
-    default=40,
-    type=int,
-    help="the number of scan points for geometric quanities computations",
 )
 
 # technical
@@ -126,7 +97,7 @@ def main():
     # setup model paths and result paths
     args.w = args.model  # ducktype a parameter
     model_id = (
-        fileid("cifar10", args) + f"_{args.target_digits[0]}_{args.target_digits[1]}"
+        fileid("resnet", args)
     )
     model_dir = os.path.join(paths["model_dir"], model_id)
     result_dir = os.path.join(paths["result_dir"], model_id)
@@ -136,9 +107,6 @@ def main():
         os.mkdir(result_dir)
 
     frames = len(args.save_epochs)
-
-    weightlist = []
-    biaslist = []
 
     # load mnist
     if args.data == "cifar10":
@@ -153,36 +121,6 @@ def main():
     else:
         raise NotImplementedError(f"dataset {args.data} not available")
 
-    # get scan range
-    # randomly sample target digit
-    assert (
-        len(args.target_digits) == 2
-    ), "target digits does not have exactly two numbers"
-
-    # sample from testing set
-    first_num_sample, second_num_sample = random_samples_by_targets(
-        test_set, targets=args.target_digits, seed=args.seed
-    )
-    first_num_sample_clean, second_num_sample_clean = random_samples_by_targets(
-        test_set_clean, targets=args.target_digits, seed=args.seed
-    )  # same seed gaurantee the same image
-    mid_clean = (first_num_sample_clean + second_num_sample_clean) / 2
-
-    # setup scan from preprocessed test set
-    t = torch.arange(args.steps, device=first_num_sample.device).reshape(-1, 1, 1, 1)
-    scan = (second_num_sample - first_num_sample) * t / args.steps + first_num_sample
-    scan = scan.to(device)  # fit the entire scan to device (should be reasonable)
-
-    # save clean mid and endpoints
-    torch.save(first_num_sample_clean, os.path.join(model_dir, "point_left.pt"))
-    torch.save(second_num_sample_clean, os.path.join(model_dir, "point_right.pt"))
-    torch.save(mid_clean, os.path.join(model_dir, "point_mid.pt"))
-
-    # store metrics
-    num_samples = args.steps  # linearly interpolate with 64 bins
-    effective_volume = torch.zeros(frames + 1, num_samples, device=device)
-    predictions = torch.zeros(frames + 1, num_samples, device=device)
-
     # get model
     # select non linearity
     if args.nl == "Sigmoid":
@@ -196,6 +134,9 @@ def main():
         nl = nn.GELU()
     elif args.nl == "ELU":
         nl = nn.ELU()
+    elif args.nl == "ReLU":
+        nl = nn.ReLU()
+        warnings.warn("Caution: ReLU is not smooth")
     else:
         raise NotImplementedError(f"nl {args.nl} not supported")
 
@@ -216,9 +157,6 @@ def main():
     # send to parallel
     feature_map = model.feature_map  # extract feature map
     model = model.to(device)
-    if device.type == "cuda":
-        model = nn.DataParallel(model)
-        cudnn.benchmark = True  # reproducibility
 
     # init models
     loss_func = nn.CrossEntropyLoss()
@@ -243,9 +181,6 @@ def main():
 
     # set up training
     epochs = args.epochs + 1
-    cnt = 0
-    weightlist = []
-    biaslist = []
 
     # training
     for i in range(epochs):
@@ -296,41 +231,9 @@ def main():
             )
 
         if i in args.save_epochs:
-            model.eval()
-            with torch.no_grad():
-                # get geometric quantities
-                detarr = torch.zeros(num_samples).to(device)
-
-                # feed to computation by batch
-                num_scan_loops = int(np.ceil(num_samples / args.scanbatchsize))
-                for loop in range(num_scan_loops):
-                    start_idx = loop * args.scanbatchsize
-                    end_idx = (loop + 1) * args.scanbatchsize
-                    detarr[start_idx:end_idx] = effective_expansion(
-                        scan[start_idx:end_idx],
-                        feature_map,
-                        k=args.k,
-                        thr=args.thr,
-                    ).squeeze()
-
-                # put back
-                effective_volume[cnt] = detarr
-                cur_prediction = torch.argmax(model(scan), dim=1)  # predictions
-                predictions[cnt] = cur_prediction
-                # get model params
-                weightlist.append(list(model.parameters())[0].clone())
-                biaslist.append(list(model.parameters())[1].clone())
-                cnt += 1
-
-    # save geometric evaluations
-    torch.save(model.to("cpu"), os.path.join(model_dir, "model.pt"))
-    torch.save(effective_volume.to("cpu"), os.path.join(model_dir, "eff_vol.pt"))
-    torch.save(predictions.to("cpu"), os.path.join(model_dir, "predictions.pt"))
-
-    # save model parameters
-    torch.save(weightlist, os.path.join(model_dir, "weightlist.pt"))
-    torch.save(biaslist, os.path.join(model_dir, "biaslist.pt"))
-
+            # snapshot of model 
+            torch.save(model.state_dict(), os.path.join(model_dir, f'resnet_model_state_dict_e{i}.pt'))
+            print(f"save model and features at epoch {i}")
 
 if __name__ == "__main__":
     main()

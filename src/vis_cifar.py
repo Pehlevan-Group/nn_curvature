@@ -20,6 +20,9 @@ from data import get_cifar_class_names
 
 # model params
 parser.add_argument(
+    "--file", default="cifar10", type=str, help="prefix to read folder from"
+)
+parser.add_argument(
     "--data",
     default="cifar10",
     type=str,
@@ -93,7 +96,7 @@ def main():
     # parse plot parameters
     args.w = args.model  # ducktype a parameter
     model_id = (
-        fileid("cifar10", args) + f"_{args.target_digits[0]}_{args.target_digits[1]}"
+        fileid(args.file, args) + f"_{args.target_digits[0]}_{args.target_digits[1]}"
     )
     result_dir = os.path.join(paths["result_dir"], model_id)
     model_dir = os.path.join(paths["model_dir"], model_id)

@@ -159,7 +159,7 @@ def main():
         for eigvals in eigvals_list:
             ax.plot(eigvals)
         plt.legend(args.eigvals_epochs, title="epoch")
-        plt.title(r"$\log(\sqrt{\lambda_i})$ at " + f'{anchor_num}')
+        plt.title(r"$\log(\sqrt{\lambda_i})$ at " + f"{anchor_num}")
         plt.ylabel(r"$\log(\sqrt{\lambda_i})$")
         plt.savefig(
             os.path.join(result_dir, f"eigvals_by_epochs_{anchor_str}.pdf"),
