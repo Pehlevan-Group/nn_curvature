@@ -144,10 +144,12 @@ def main():
         ax,
         plot_line=args.plot_line,
         cmap="coolwarm",
-        label='curvature'
+        label="curvature",
     )
     # save
-    anima.save(os.path.join(result_dir, f"curvgrowth_{model_id}.gif"), writer="pillow", dpi=300)
+    anima.save(
+        os.path.join(result_dir, f"curvgrowth_{model_id}.gif"), writer="pillow", dpi=300
+    )
     plt.close()
 
     # plot expansion
@@ -165,10 +167,12 @@ def main():
         fig,
         ax,
         plot_line=args.plot_line,
-        label='volume element'
+        label="volume element",
     )
     # save
-    anima.save(os.path.join(result_dir, f"expansion_{model_id}.gif"), writer="pillow", dpi=300)
+    anima.save(
+        os.path.join(result_dir, f"expansion_{model_id}.gif"), writer="pillow", dpi=300
+    )
     plt.close()
 
     # plot prediction
@@ -188,10 +192,12 @@ def main():
         plot_line=args.plot_line,
         cmap="cividis",
         is_binary=True,
-        label='label prediction'
+        label="label prediction",
     )
     # save
-    anima.save(os.path.join(result_dir, f"prediction_{model_id}.gif"), writer="pillow", dpi=300)
+    anima.save(
+        os.path.join(result_dir, f"prediction_{model_id}.gif"), writer="pillow", dpi=300
+    )
     plt.close()
 
 

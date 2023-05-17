@@ -26,7 +26,7 @@ def makepic_digits(
     sct = ax.scatter(
         list(range(len(points))), points, c=colors, cmap=CMAP, vmin=0, vmax=10
     )
-    ax.set_ylabel('log10 volume element')
+    ax.set_ylabel("log10 volume element")
 
     # colorbar
     cb = fig.colorbar(sct, cax=cax)
@@ -653,7 +653,7 @@ def makevid_digits(
     ax,
 ):
     """for mnist"""
-    fig.set_tight_layout(True) 
+    fig.set_tight_layout(True)
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", "5%", "2%")
 
