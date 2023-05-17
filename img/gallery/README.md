@@ -11,4 +11,5 @@ This folder stores visualization of volume element of all experiments with diffe
   - [mnist_relu](mnist_relu): same architecture but with ReLU activation;
   - [cifar_gelu](cifar_gelu): ResNet34 on CIFAR-10 images with GELU activation;
   - [cifar_relu](cifar_relu): ResNet34 on CIFAR-10 images with ReLU activation;
-  - [cifar_repeat](cifar_repeat): experiment to show that our interpolation does not respect the data geoemtry (interpolate among the same type of images, and the center is no longer of that type).
+  - [barlow](barlow): Barlow Twins with ResNet 34 backbone on CIFAR-10 images with GELU activation;
+  - [simclr](simclr): SimCLR with ResNet 34 backbone on CIFAR-10 images with GELU activation.
