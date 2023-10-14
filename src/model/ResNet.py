@@ -144,3 +144,19 @@ def ResNet101(nl=nn.GELU()):
 
 def ResNet152(nl=nn.GELU()):
     return ResNet(Bottleneck, [3, 8, 36, 3])
+
+def get_intermeidate_feature_maps(model: nn.Module):
+    """
+    get feature maps from intermediate layers
+    
+    Each resnet has four blocks. The feature map is defined by 
+    appending avg pooling and flattening after each blocks
+    """
+    avg_kernel_size = 4 # ? what should be the most appropriate value ?
+    model_list = model.feature_map
+
+    # * align output dimension to be all 512
+    yield nn.Sequential(*model_list[:4], nn.AvgPool2d((16, 8)), nn.Flatten(start_dim=1))
+    yield nn.Sequential(*model_list[:5], nn.AvgPool2d(8), nn.Flatten(start_dim=1))
+    yield nn.Sequential(*model_list[:6], nn.AvgPool2d((8, 4)), nn.Flatten(start_dim=1))
+    yield nn.Sequential(*model_list[:7], nn.AvgPool2d(avg_kernel_size), nn.Flatten(start_dim=1))

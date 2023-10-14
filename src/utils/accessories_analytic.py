@@ -15,6 +15,8 @@ def derivative_selector(nl: str) -> Callable:
         return Sigmoid_analytic_derivative
     elif nl == "Erf":
         return Erf_analytic_derivative
+    elif nl == "ReLU":
+        return lambda x: (x > 0).float()
     else:
         raise NotImplementedError(
             f"derivative of nl {nl} not implemented in closed-form"

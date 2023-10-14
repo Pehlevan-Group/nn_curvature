@@ -71,6 +71,176 @@ def makepic_digits(
     # ax.set_ylim(y_lim_min, y_lim_max)
 
 
+# helper functions to visualize planes
+def _add_ternary_boundary(ax):
+    """manually draw the ternary boundaries"""
+    ax.plot([-0.5, 0.5], [1 / 2 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
+    ax.plot([-0.5, 0], [1 / 2 / (3**0.5), -1 / (3**0.5)], color="black")
+    ax.plot([0, 0.5], [-1 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
+
+    tick_width = 0.02
+    text_offset = 0.02
+
+    # top line ticks
+    # ax.plot([-0.5, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
+    # ax.text(-0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '0.0')
+    ax.plot(
+        [-0.3, -0.3],
+        [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
+        color="black",
+    )
+    ax.text(-0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.2")
+    ax.plot(
+        [-0.1, -0.1],
+        [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
+        color="black",
+    )
+    ax.text(-0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.4")
+    ax.plot(
+        [0.1, 0.1],
+        [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
+        color="black",
+    )
+    ax.text(0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.6")
+    ax.plot(
+        [0.3, 0.3],
+        [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
+        color="black",
+    )
+    ax.text(0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.8")
+    # ax.plot([0.5, 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
+    # ax.text(0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '1.0')
+
+    # left line
+    y_descent = 3**0.5 / 10
+    # ax.plot([-0.5 - tick_width, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
+    # ax.text(-0.5 - tick_width - 3 * text_offset, 1/2/(3 ** 0.5), '0.0')
+    ax.plot(
+        [-0.4 - tick_width, -0.4],
+        [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
+        color="black",
+    )
+    ax.text(
+        -0.4 - tick_width - 3 * text_offset, 1 / 2 / (3**0.5) - y_descent, "0.2"
+    )
+    ax.plot(
+        [-0.3 - tick_width, -0.3],
+        [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
+        color="black",
+    )
+    ax.text(
+        -0.3 - tick_width - 3 * text_offset,
+        1 / 2 / (3**0.5) - 2 * y_descent,
+        "0.4",
+    )
+    ax.plot(
+        [-0.2 - tick_width, -0.2],
+        [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
+        color="black",
+    )
+    ax.text(
+        -0.2 - tick_width - 3 * text_offset,
+        1 / 2 / (3**0.5) - 3 * y_descent,
+        "0.6",
+    )
+    ax.plot(
+        [-0.1 - tick_width, -0.1],
+        [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
+        color="black",
+    )
+    ax.text(
+        -0.1 - tick_width - 3 * text_offset,
+        1 / 2 / (3**0.5) - 4 * y_descent,
+        "0.8",
+    )
+    # ax.plot([-0. - tick_width, -0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
+    # ax.text(-0. - tick_width - 3 * text_offset, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
+
+    # right line
+    y_descent = 3**0.5 / 10
+    # ax.plot([0.5, tick_width + 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
+    # ax.text(0.5 + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5), '0.0')
+    ax.plot(
+        [0.4, tick_width + 0.4],
+        [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
+        color="black",
+    )
+    ax.text(
+        0.4 + 0.75 * text_offset + tick_width, 1 / 2 / (3**0.5) - y_descent, "0.2"
+    )
+    ax.plot(
+        [0.3, tick_width + 0.3],
+        [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
+        color="black",
+    )
+    ax.text(
+        0.3 + 0.75 * text_offset + tick_width,
+        1 / 2 / (3**0.5) - 2 * y_descent,
+        "0.4",
+    )
+    ax.plot(
+        [0.2, tick_width + 0.2],
+        [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
+        color="black",
+    )
+    ax.text(
+        0.2 + 0.75 * text_offset + tick_width,
+        1 / 2 / (3**0.5) - 3 * y_descent,
+        "0.6",
+    )
+    ax.plot(
+        [0.1, tick_width + 0.1],
+        [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
+        color="black",
+    )
+    ax.text(
+        0.1 + 0.75 * text_offset + tick_width,
+        1 / 2 / (3**0.5) - 4 * y_descent,
+        "0.8",
+    )
+    # ax.plot([0., tick_width + 0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
+    # ax.text(0. + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
+
+    ax.set_xlim([-0.6, 0.6])
+    ax.set_ylim([-0.7, 0.5])
+
+def _add_subaxis_image(image_list, ax):
+    """add a subaxis and attach image on it"""
+    img_one, img_two, img_three, origin = image_list
+
+    one_img_ax = ax.inset_axes([0.2, 0.64, 0.1, 0.1])
+    one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
+    one_img_ax.axis("off")
+    two_img_ax = ax.inset_axes([0.7, 0.64, 0.1, 0.1])
+    two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
+    two_img_ax.axis("off")
+    three_img_ax = ax.inset_axes([0.45, 0.21, 0.1, 0.1])
+    three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
+    three_img_ax.axis("off")
+
+    origin_img_ax = ax.inset_axes([0.45, 0.45, 0.1, 0.1])
+    origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
+    origin_img_ax.axis("off")
+
+def _add_subaxis_image_ternary(image_list, ax):
+    """add a subaxis and attach image on it (on ternary plots)"""
+    img_one, img_two, img_three, origin = image_list
+
+    one_img_ax = ax.inset_axes([0.05, 0.8, 0.1, 0.1])
+    one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
+    one_img_ax.axis("off")
+    two_img_ax = ax.inset_axes([0.85, 0.8, 0.1, 0.1])
+    two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
+    two_img_ax.axis("off")
+    three_img_ax = ax.inset_axes([0.45, 0.05, 0.1, 0.1])
+    three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
+    three_img_ax.axis("off")
+
+    origin_img_ax = ax.inset_axes([0.45, 0.55, 0.1, 0.1])
+    origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
+    origin_img_ax.axis("off")
+    
+
 def makepic_digits_plane(
     labels,
     epoch,
@@ -114,407 +284,13 @@ def makepic_digits_plane(
         points_masked = np.ma.array(points.reshape(*L_masked.shape), mask=~mask)
 
         sct1 = ax[0].scatter(L_masked, M_masked, c=colors, cmap=CMAP, vmin=0, vmax=10)
-        sct2 = ax[1].scatter(
-            L_masked, M_masked, c=entropy, cmap="cividis"
-        )  # ? colormap ?
+        sct2 = ax[1].scatter(L_masked, M_masked, c=entropy, cmap="cividis")  # ? colormap ?
         sct3 = ax[2].contourf(L_masked, M_masked, points_masked, levels=12)
 
-        # ===================== axes 1 ======================
-        # manually draw the ternary axis
-        ax[0].plot([-0.5, 0.5], [1 / 2 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
-        ax[0].plot([-0.5, 0], [1 / 2 / (3**0.5), -1 / (3**0.5)], color="black")
-        ax[0].plot([0, 0.5], [-1 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
-
-        tick_width = 0.02
-        text_offset = 0.02
-
-        # top line ticks
-        # ax[0].plot([-0.5, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
-        # ax[0].text(-0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '0.0')
-        ax[0].plot(
-            [-0.3, -0.3],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[0].text(-0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.2")
-        ax[0].plot(
-            [-0.1, -0.1],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[0].text(-0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.4")
-        ax[0].plot(
-            [0.1, 0.1],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[0].text(0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.6")
-        ax[0].plot(
-            [0.3, 0.3],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[0].text(0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.8")
-        # ax[0].plot([0.5, 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
-        # ax[0].text(0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '1.0')
-
-        # left line
-        y_descent = 3**0.5 / 10
-        # ax[0].plot([-0.5 - tick_width, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
-        # ax[0].text(-0.5 - tick_width - 3 * text_offset, 1/2/(3 ** 0.5), '0.0')
-        ax[0].plot(
-            [-0.4 - tick_width, -0.4],
-            [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
-            color="black",
-        )
-        ax[0].text(
-            -0.4 - tick_width - 3 * text_offset, 1 / 2 / (3**0.5) - y_descent, "0.2"
-        )
-        ax[0].plot(
-            [-0.3 - tick_width, -0.3],
-            [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
-            color="black",
-        )
-        ax[0].text(
-            -0.3 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 2 * y_descent,
-            "0.4",
-        )
-        ax[0].plot(
-            [-0.2 - tick_width, -0.2],
-            [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
-            color="black",
-        )
-        ax[0].text(
-            -0.2 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 3 * y_descent,
-            "0.6",
-        )
-        ax[0].plot(
-            [-0.1 - tick_width, -0.1],
-            [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
-            color="black",
-        )
-        ax[0].text(
-            -0.1 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 4 * y_descent,
-            "0.8",
-        )
-        # ax[0].plot([-0. - tick_width, -0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
-        # ax[0].text(-0. - tick_width - 3 * text_offset, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
-
-        # right line
-        y_descent = 3**0.5 / 10
-        # ax[0].plot([0.5, tick_width + 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
-        # ax[0].text(0.5 + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5), '0.0')
-        ax[0].plot(
-            [0.4, tick_width + 0.4],
-            [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
-            color="black",
-        )
-        ax[0].text(
-            0.4 + 0.75 * text_offset + tick_width, 1 / 2 / (3**0.5) - y_descent, "0.2"
-        )
-        ax[0].plot(
-            [0.3, tick_width + 0.3],
-            [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
-            color="black",
-        )
-        ax[0].text(
-            0.3 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 2 * y_descent,
-            "0.4",
-        )
-        ax[0].plot(
-            [0.2, tick_width + 0.2],
-            [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
-            color="black",
-        )
-        ax[0].text(
-            0.2 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 3 * y_descent,
-            "0.6",
-        )
-        ax[0].plot(
-            [0.1, tick_width + 0.1],
-            [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
-            color="black",
-        )
-        ax[0].text(
-            0.1 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 4 * y_descent,
-            "0.8",
-        )
-        # ax[0].plot([0., tick_width + 0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
-        # ax[0].text(0. + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
-
-        ax[0].set_xlim([-0.6, 0.6])
-        ax[0].set_ylim([-0.7, 0.5])
-
-        # ===================== axes 2 ======================
-        # manually draw the ternary axis
-        ax[1].plot([-0.5, 0.5], [1 / 2 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
-        ax[1].plot([-0.5, 0], [1 / 2 / (3**0.5), -1 / (3**0.5)], color="black")
-        ax[1].plot([0, 0.5], [-1 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
-
-        tick_width = 0.02
-        text_offset = 0.02
-
-        # top line ticks
-        # ax[1].plot([-0.5, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
-        # ax[1].text(-0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '0.0')
-        ax[1].plot(
-            [-0.3, -0.3],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[1].text(-0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.2")
-        ax[1].plot(
-            [-0.1, -0.1],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[1].text(-0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.4")
-        ax[1].plot(
-            [0.1, 0.1],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[1].text(0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.6")
-        ax[1].plot(
-            [0.3, 0.3],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[1].text(0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.8")
-        # ax[1].plot([0.5, 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
-        # ax[1].text(0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '1.0')
-
-        # left line
-        y_descent = 3**0.5 / 10
-        # ax[1].plot([-0.5 - tick_width, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
-        # ax[1].text(-0.5 - tick_width - 3 * text_offset, 1/2/(3 ** 0.5), '0.0')
-        ax[1].plot(
-            [-0.4 - tick_width, -0.4],
-            [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
-            color="black",
-        )
-        ax[1].text(
-            -0.4 - tick_width - 3 * text_offset, 1 / 2 / (3**0.5) - y_descent, "0.2"
-        )
-        ax[1].plot(
-            [-0.3 - tick_width, -0.3],
-            [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
-            color="black",
-        )
-        ax[1].text(
-            -0.3 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 2 * y_descent,
-            "0.4",
-        )
-        ax[1].plot(
-            [-0.2 - tick_width, -0.2],
-            [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
-            color="black",
-        )
-        ax[1].text(
-            -0.2 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 3 * y_descent,
-            "0.6",
-        )
-        ax[1].plot(
-            [-0.1 - tick_width, -0.1],
-            [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
-            color="black",
-        )
-        ax[1].text(
-            -0.1 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 4 * y_descent,
-            "0.8",
-        )
-        # ax[1].plot([-0. - tick_width, -0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
-        # ax[1].text(-0. - tick_width - 3 * text_offset, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
-
-        # right line
-        y_descent = 3**0.5 / 10
-        # ax[1].plot([0.5, tick_width + 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
-        # ax[1].text(0.5 + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5), '0.0')
-        ax[1].plot(
-            [0.4, tick_width + 0.4],
-            [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
-            color="black",
-        )
-        ax[1].text(
-            0.4 + 0.75 * text_offset + tick_width, 1 / 2 / (3**0.5) - y_descent, "0.2"
-        )
-        ax[1].plot(
-            [0.3, tick_width + 0.3],
-            [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
-            color="black",
-        )
-        ax[1].text(
-            0.3 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 2 * y_descent,
-            "0.4",
-        )
-        ax[1].plot(
-            [0.2, tick_width + 0.2],
-            [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
-            color="black",
-        )
-        ax[1].text(
-            0.2 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 3 * y_descent,
-            "0.6",
-        )
-        ax[1].plot(
-            [0.1, tick_width + 0.1],
-            [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
-            color="black",
-        )
-        ax[1].text(
-            0.1 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 4 * y_descent,
-            "0.8",
-        )
-        # ax[1].plot([0., tick_width + 0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
-        # ax[1].text(0. + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
-
-        ax[1].set_xlim([-0.6, 0.6])
-        ax[1].set_ylim([-0.7, 0.5])
-
-        # ===================== axes 3 ======================
-        # manually draw the ternary axis
-        ax[2].plot([-0.5, 0.5], [1 / 2 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
-        ax[2].plot([-0.5, 0], [1 / 2 / (3**0.5), -1 / (3**0.5)], color="black")
-        ax[2].plot([0, 0.5], [-1 / (3**0.5), 1 / 2 / (3**0.5)], color="black")
-
-        tick_width = 0.02
-        text_offset = 0.02
-
-        # top line ticks
-        # ax[2].plot([-0.5, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
-        # ax[2].text(-0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '0.0')
-        ax[2].plot(
-            [-0.3, -0.3],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[2].text(-0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.2")
-        ax[2].plot(
-            [-0.1, -0.1],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[2].text(-0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.4")
-        ax[2].plot(
-            [0.1, 0.1],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[2].text(0.1 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.6")
-        ax[2].plot(
-            [0.3, 0.3],
-            [1 / 2 / (3**0.5), 1 / 2 / (3**0.5) + tick_width],
-            color="black",
-        )
-        ax[2].text(0.3 - text_offset, 1 / 2 / (3**0.5) + tick_width, "0.8")
-        # ax[2].plot([0.5, 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5) + tick_width], color='black')
-        # ax[2].text(0.5 - text_offset, 1/2/(3 ** 0.5) + tick_width, '1.0')
-
-        # left line
-        y_descent = 3**0.5 / 10
-        # ax[2].plot([-0.5 - tick_width, -0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
-        # ax[2].text(-0.5 - tick_width - 3 * text_offset, 1/2/(3 ** 0.5), '0.0')
-        ax[2].plot(
-            [-0.4 - tick_width, -0.4],
-            [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
-            color="black",
-        )
-        ax[2].text(
-            -0.4 - tick_width - 3 * text_offset, 1 / 2 / (3**0.5) - y_descent, "0.2"
-        )
-        ax[2].plot(
-            [-0.3 - tick_width, -0.3],
-            [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
-            color="black",
-        )
-        ax[2].text(
-            -0.3 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 2 * y_descent,
-            "0.4",
-        )
-        ax[2].plot(
-            [-0.2 - tick_width, -0.2],
-            [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
-            color="black",
-        )
-        ax[2].text(
-            -0.2 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 3 * y_descent,
-            "0.6",
-        )
-        ax[2].plot(
-            [-0.1 - tick_width, -0.1],
-            [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
-            color="black",
-        )
-        ax[2].text(
-            -0.1 - tick_width - 3 * text_offset,
-            1 / 2 / (3**0.5) - 4 * y_descent,
-            "0.8",
-        )
-        # ax[2].plot([-0. - tick_width, -0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
-        # ax[2].text(-0. - tick_width - 3 * text_offset, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
-
-        # right line
-        y_descent = 3**0.5 / 10
-        # ax[2].plot([0.5, tick_width + 0.5], [1/2/(3 ** 0.5), 1/2/(3 ** 0.5)], color='black')
-        # ax[2].text(0.5 + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5), '0.0')
-        ax[2].plot(
-            [0.4, tick_width + 0.4],
-            [1 / 2 / (3**0.5) - y_descent, 1 / 2 / (3**0.5) - y_descent],
-            color="black",
-        )
-        ax[2].text(
-            0.4 + 0.75 * text_offset + tick_width, 1 / 2 / (3**0.5) - y_descent, "0.2"
-        )
-        ax[2].plot(
-            [0.3, tick_width + 0.3],
-            [1 / 2 / (3**0.5) - 2 * y_descent, 1 / 2 / (3**0.5) - 2 * y_descent],
-            color="black",
-        )
-        ax[2].text(
-            0.3 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 2 * y_descent,
-            "0.4",
-        )
-        ax[2].plot(
-            [0.2, tick_width + 0.2],
-            [1 / 2 / (3**0.5) - 3 * y_descent, 1 / 2 / (3**0.5) - 3 * y_descent],
-            color="black",
-        )
-        ax[2].text(
-            0.2 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 3 * y_descent,
-            "0.6",
-        )
-        ax[2].plot(
-            [0.1, tick_width + 0.1],
-            [1 / 2 / (3**0.5) - 4 * y_descent, 1 / 2 / (3**0.5) - 4 * y_descent],
-            color="black",
-        )
-        ax[2].text(
-            0.1 + 0.75 * text_offset + tick_width,
-            1 / 2 / (3**0.5) - 4 * y_descent,
-            "0.8",
-        )
-        # ax[2].plot([0., tick_width + 0.], [1/2/(3 ** 0.5) - 5  * y_descent, 1/2/(3 ** 0.5) - 5  * y_descent], color='black')
-        # ax[2].text(0. + 0.75 * text_offset + tick_width, 1/2/(3 ** 0.5) - 5  * y_descent, '1.0')
-
-        ax[2].set_xlim([-0.6, 0.6])
-        ax[2].set_ylim([-0.7, 0.5])
-
+        # add ternary boundaries
+        _add_ternary_boundary(ax[0])
+        _add_ternary_boundary(ax[1])
+        _add_ternary_boundary(ax[2])
     else:
         sct1 = ax[0].scatter(L, M, c=colors, cmap=CMAP, vmin=0, vmax=10)
         sct2 = ax[1].scatter(L, M, c=entropy, cmap="cividis")  # ? colormap ?
@@ -551,93 +327,159 @@ def makepic_digits_plane(
 
     # visualize sub image in the flow plot
     if ternary:
-        one_img_ax = ax[0].inset_axes([0.05, 0.8, 0.1, 0.1])
-        one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
-        one_img_ax.axis("off")
-        two_img_ax = ax[0].inset_axes([0.85, 0.8, 0.1, 0.1])
-        two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
-        two_img_ax.axis("off")
-        three_img_ax = ax[0].inset_axes([0.45, 0.05, 0.1, 0.1])
-        three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
-        three_img_ax.axis("off")
-
-        origin_img_ax = ax[0].inset_axes([0.45, 0.55, 0.1, 0.1])
-        origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
-        origin_img_ax.axis("off")
-
-        one_img_ax = ax[1].inset_axes([0.05, 0.8, 0.1, 0.1])
-        one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
-        one_img_ax.axis("off")
-        two_img_ax = ax[1].inset_axes([0.85, 0.8, 0.1, 0.1])
-        two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
-        two_img_ax.axis("off")
-        three_img_ax = ax[1].inset_axes([0.45, 0.05, 0.1, 0.1])
-        three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
-        three_img_ax.axis("off")
-
-        origin_img_ax = ax[1].inset_axes([0.45, 0.55, 0.1, 0.1])
-        origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
-        origin_img_ax.axis("off")
-
-        one_img_ax = ax[2].inset_axes([0.05, 0.8, 0.1, 0.1])
-        one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
-        one_img_ax.axis("off")
-        two_img_ax = ax[2].inset_axes([0.85, 0.8, 0.1, 0.1])
-        two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
-        two_img_ax.axis("off")
-        three_img_ax = ax[2].inset_axes([0.45, 0.05, 0.1, 0.1])
-        three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
-        three_img_ax.axis("off")
-
-        origin_img_ax = ax[2].inset_axes([0.45, 0.55, 0.1, 0.1])
-        origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
-        origin_img_ax.axis("off")
+        _add_subaxis_image_ternary([img_one, img_two, img_three, origin], ax[0])
+        _add_subaxis_image_ternary([img_one, img_two, img_three, origin], ax[1])
+        _add_subaxis_image_ternary([img_one, img_two, img_three, origin], ax[2])
     else:
-        one_img_ax = ax[0].inset_axes([0.2, 0.64, 0.1, 0.1])
-        one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
-        one_img_ax.axis("off")
-        two_img_ax = ax[0].inset_axes([0.7, 0.64, 0.1, 0.1])
-        two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
-        two_img_ax.axis("off")
-        three_img_ax = ax[0].inset_axes([0.45, 0.21, 0.1, 0.1])
-        three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
-        three_img_ax.axis("off")
+        _add_subaxis_image([img_one, img_two, img_three, origin], ax[0])
+        _add_subaxis_image([img_one, img_two, img_three, origin], ax[1])
+        _add_subaxis_image([img_one, img_two, img_three, origin], ax[2])
 
-        origin_img_ax = ax[0].inset_axes([0.45, 0.45, 0.1, 0.1])
-        origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
-        origin_img_ax.axis("off")
+def makepic_digits_plane_deep(
+    labels,
+    epoch,
+    l,
+    y,
+    eff_vols_by_layer,
+    entropy,
+    prediction,
+    img_one,
+    img_two,
+    img_three,
+    origin,
+    fig,
+    ax,
+    ternary=False,
+    cmap="viridis",
+):
+    """for cifar10"""
+    # prediction
+    div1 = make_axes_locatable(ax[0])
+    cax1 = div1.append_axes("right", "5%", "2%")
 
-        one_img_ax = ax[1].inset_axes([0.2, 0.64, 0.1, 0.1])
-        one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
-        one_img_ax.axis("off")
-        two_img_ax = ax[1].inset_axes([0.7, 0.64, 0.1, 0.1])
-        two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
-        two_img_ax.axis("off")
-        three_img_ax = ax[1].inset_axes([0.45, 0.21, 0.1, 0.1])
-        three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
-        three_img_ax.axis("off")
+    # entropy
+    div2 = make_axes_locatable(ax[1])
+    cax2 = div2.append_axes("right", "5%", "2%")
 
-        origin_img_ax = ax[1].inset_axes([0.45, 0.45, 0.1, 0.1])
-        origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
-        origin_img_ax.axis("off")
+    # vol elements
+    div3 = make_axes_locatable(ax[2])
+    cax3 = div3.append_axes("right", "5%", "2%")
+    div4 = make_axes_locatable(ax[3])
+    cax4 = div4.append_axes("right", "5%", "2%")
+    div5 = make_axes_locatable(ax[4])
+    cax5 = div5.append_axes("right", "5%", "2%")
+    div6 = make_axes_locatable(ax[5])
+    cax6 = div6.append_axes("right", "5%", "2%")
 
-        one_img_ax = ax[2].inset_axes([0.2, 0.64, 0.1, 0.1])
-        one_img_ax.imshow(img_one.permute(1, 2, 0).detach().cpu().numpy())
-        one_img_ax.axis("off")
-        two_img_ax = ax[2].inset_axes([0.7, 0.64, 0.1, 0.1])
-        two_img_ax.imshow(img_two.permute(1, 2, 0).detach().cpu().numpy())
-        two_img_ax.axis("off")
-        three_img_ax = ax[2].inset_axes([0.45, 0.21, 0.1, 0.1])
-        three_img_ax.imshow(img_three.permute(1, 2, 0).detach().cpu().numpy())
-        three_img_ax.axis("off")
+    L, M = np.meshgrid(
+        l.detach().cpu().numpy(), y.detach().cpu().numpy(), indexing="ij"
+    )
+    colors = prediction.detach().cpu().numpy()
+    points_list = [eff_vol.detach().cpu().numpy() for eff_vol in eff_vols_by_layer]
 
-        origin_img_ax = ax[2].inset_axes([0.45, 0.45, 0.1, 0.1])
-        origin_img_ax.imshow(origin.permute(1, 2, 0).detach().cpu().numpy())
-        origin_img_ax.axis("off")
+    if ternary:  # only visualize the convex hull of the anchor points
+        mask = (
+            (M < 1 / (2 * 3**0.5))
+            & (M > 3**0.5 * L - 1 / 3**0.5)
+            & (M > -(3**0.5) * L - 1 / 3**0.5)
+        )
+        L_masked, M_masked = np.ma.array(L, mask=~mask), np.ma.array(M, mask=~mask)
+        # L_masked[~mask] = np.nan
+        # M_masked[~mask] = np.nan
+        # mask each layer
+        points_masked1 = np.ma.array(points_list[0].reshape(*L_masked.shape), mask=~mask)
+        points_masked2 = np.ma.array(points_list[1].reshape(*L_masked.shape), mask=~mask)
+        points_masked3 = np.ma.array(points_list[2].reshape(*L_masked.shape), mask=~mask)
+        points_masked4 = np.ma.array(points_list[3].reshape(*L_masked.shape), mask=~mask)
+        vmin = min([points_masked1.min(), points_masked2.min(), points_masked3.min(), points_masked4.min()])
+        vmax = max([points_masked1.max(), points_masked2.max(), points_masked3.max(), points_masked4.max()])
+        levels = [int(num) for num in np.linspace(vmin, vmax, 15)]  # convert to int for better display
 
-    # ax.set_xlim(L.min() - 0.05, L.max() + 0.05)
-    # ax.set_ylim(-100, 0)
+        sct1 = ax[0].scatter(L_masked, M_masked, c=colors, cmap=CMAP, vmin=0, vmax=10)
+        sct2 = ax[1].scatter(L_masked, M_masked, c=entropy, cmap="cividis")  # ? colormap ?
 
+        # * for uniform grating
+        # sct3 = ax[2].contourf(L_masked, M_masked, points_masked1, levels=levels)
+        # sct4 = ax[3].contourf(L_masked, M_masked, points_masked2, levels=levels)
+        # sct5 = ax[4].contourf(L_masked, M_masked, points_masked3, levels=levels)
+        # sct6 = ax[5].contourf(L_masked, M_masked, points_masked4, levels=levels)
+
+        # * for individual grating
+        sct3 = ax[2].contourf(L_masked, M_masked, points_masked1, levels=15)
+        sct4 = ax[3].contourf(L_masked, M_masked, points_masked2, levels=15)
+        sct5 = ax[4].contourf(L_masked, M_masked, points_masked3, levels=15)
+        sct6 = ax[5].contourf(L_masked, M_masked, points_masked4, levels=15)
+
+        # add ternary boundaries
+        for cur_ax in ax:
+            _add_ternary_boundary(cur_ax)
+    else:
+        vmin = min([points.min() for points in points_list])
+        vmax = max([points.max() for points in points_list])
+
+        sct1 = ax[0].scatter(L, M, c=colors, cmap=CMAP, vmin=0, vmax=10)
+        sct2 = ax[1].scatter(L, M, c=entropy, cmap="cividis")  # ? colormap ?
+        
+        # * for uniform grating 
+        # sct3 = ax[2].scatter(L, M, c=points_list[0], cmap=cmap, vmin=vmin, vmax=vmax)
+        # sct4 = ax[3].scatter(L, M, c=points_list[1], cmap=cmap, vmin=vmin, vmax=vmax)
+        # sct5 = ax[4].scatter(L, M, c=points_list[2], cmap=cmap, vmin=vmin, vmax=vmax)
+        # sct6 = ax[5].scatter(L, M, c=points_list[3], cmap=cmap, vmin=vmin, vmax=vmax)
+        
+        # * for individual grating
+        sct3 = ax[2].scatter(L, M, c=points_list[0], cmap=cmap)
+        sct4 = ax[3].scatter(L, M, c=points_list[1], cmap=cmap)
+        sct5 = ax[4].scatter(L, M, c=points_list[2], cmap=cmap)
+        sct6 = ax[5].scatter(L, M, c=points_list[3], cmap=cmap)
+
+
+    for cur_ax in ax:
+        cur_ax.set_xticks([])
+        cur_ax.set_yticks([])
+
+    # colorbars
+    cb1 = fig.colorbar(sct1, cax=cax1)
+    cb1.ax.get_yaxis().set_ticks([])
+    for j, lab in enumerate(labels):
+        cb1.ax.text(
+            0.5,
+            (2 * j + 1) / 2,
+            lab,
+            ha="center",
+            va="center",
+            rotation=270,
+            fontsize="small",
+        )
+    cb1.ax.get_yaxis().labelpad = 15
+    cb1.ax.set_ylabel("class prediction", rotation=270)
+    ax[0].set_title("prediction")
+    cb2 = fig.colorbar(sct2, cax=cax2)
+    cb2.ax.set_ylabel("entropy (log10)", rotation=270)
+    ax[1].set_title('entropy')
+
+    cb3 = fig.colorbar(sct3, cax=cax3)
+    cb3.ax.set_ylabel("log10 volume element", rotation=270)
+    ax[2].set_title('layer 1')
+    cb4 = fig.colorbar(sct4, cax=cax4)
+    cb4.ax.set_ylabel("log10 volume element", rotation=270)
+    ax[3].set_title('layer 2')
+    cb5 = fig.colorbar(sct5, cax=cax5)
+    cb5.ax.set_ylabel("log10 volume element", rotation=270)
+    ax[4].set_title('layer 3')
+    cb6 = fig.colorbar(sct6, cax=cax6)
+    cb6.ax.set_ylabel("log10 volume element", rotation=270)
+    ax[5].set_title('layer 4')
+
+    tx = plt.suptitle(f"Epoch {epoch}")
+    plt.tight_layout()
+
+    # visualize sub image in the flow plot
+    if ternary:
+        for cur_ax in ax:
+            _add_subaxis_image_ternary([img_one, img_two, img_three, origin], cur_ax)
+    else:
+        for cur_ax in ax:
+            _add_subaxis_image([img_one, img_two, img_three, origin], cur_ax)
 
 # ===================== videos ======================
 def makevid_digits(
