@@ -39,4 +39,14 @@ bash commands/train_cifar.sh
 
 ## Acknowledgement
 
-Author: Julian Alex Rubinfien, Sheng Yang, Jacob A Zavatone-Veth, Cengiz Pehlevan
+If you find this code useful, please consider citing our preprint: 
+
+    @article{zv2023neural,
+      title={Neural networks learn to magnify areas near decision boundaries}, 
+      author={Zavatone-Veth, Jacob A. and Yang, Sheng and Rubinfien, Julian A. and Pehlevan, Cengiz},
+      year={2023},
+      journal={arXiv preprint},
+      eprint={2301.11375},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+    }
