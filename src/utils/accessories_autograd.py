@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.autograd.functional as fnc
 
 # constants
-TOLS = 1e-8
+TOLS = None
 
 # # takes two points in plane, eg torch.tensor([[0.5,0.5]],requires_grad=True)
 # def kernel(x: torch.Tensor, xprime: torch.Tensor, mod: nn.Module) -> torch.Tensor:
@@ -200,15 +200,16 @@ def effective_expansion(
 
 def christoffels(x: torch.Tensor, feature_map: nn.Module) -> torch.Tensor:
     """
-    chirtoffel symbols
+    chirtoffels symbols of the second kind
     this deviates from the old one by ~.2 (order 10^3 smaller than magnitudes of the tensor)
 
+    :param x: the base point, with first dimension the batch dimension
     :param feature_map: the feature map defined by the neural network
+    :return Christoffel symbol, whose contravariant dimension is at second, after the batch dimension
     """
     met = metric(x, feature_map).squeeze()
     # supports batch; returns shape (dim,2,2)... note that this returns bad inverse
     # bc met usually not invertible...
-    # * this method can not (for now be salvaged) ... It is numerially unstable whatsoever ...
     metinv = torch.linalg.pinv(
         met, hermitian=True, rtol=TOLS
     )  # set hermitian to true to discard small eigenvalues
@@ -220,9 +221,12 @@ def christoffels(x: torch.Tensor, feature_map: nn.Module) -> torch.Tensor:
         .permute(2, 1, 0, 3)
     )
 
-    firstterm = torch.einsum("...din,...dknj->...dijk", metinv, deriv)
-    secondterm = torch.einsum("...din,...djnk->...dijk", metinv, deriv)
-    thirdterm = torch.einsum("...din,...dnjk->...dijk", metinv, deriv)
+    # einsum interpretation:
+    # - d: the batch dimension
+    # - (i, j, k): Chris^{i}_{j, k}
+    firstterm = torch.einsum("...in,...njk->...ijk", metinv, deriv)
+    secondterm = torch.einsum("...in,...nkj->...ijk", metinv, deriv)
+    thirdterm = torch.einsum("...in,...jkn->...ijk", metinv, deriv)
 
     result = 0.5 * (firstterm + secondterm - thirdterm)
     return result
@@ -238,13 +242,26 @@ def ricci(x: torch.Tensor, feature_map: nn.Module) -> torch.Tensor:
         .permute(3, 0, 1, 2, 4)
     )
 
-    first = torch.einsum("...diijk->...djk", deriv)
-    second = torch.einsum("...djiki->...djk", deriv)
-    third = torch.einsum("...diip,...dpjk->...djk", chris, chris)
-    fourth = torch.einsum("...dijp,...dpik->...djk", chris, chris)
+    # * there are two conventions of defining the Riemann tensors
+    # * two should be constant multiples of each other
+    # Dodson and Poston's 
+    # get (3, 1) Riemann Tensor, collapse, and permute
+    # einsum interpretation
+    # output R^{m}_{n, a, b}, with 'm' and 'a' dimension collapsed
+    first = torch.einsum("...abna->...bn", deriv)  # \partial \alpha Chris^{m}_{b,n}
+    second = torch.einsum("...aanb->...bn", deriv)  # \partial \beta Chris^{m}_{a, n}
+    third = torch.einsum("...ran,...abr->...bn", chris, chris)
+    fourth = torch.einsum("...rbn,...aar->...bn", chris, chris)
 
-    result = first - second + third - fourth
-    return result
+    # do Carmo's (the opposite of John M Lee)
+    # first = torch.einsum("...abna->...nb", deriv)
+    # second = torch.einsum("...aanb->...nb", deriv)
+    # third = torch.einsum("...aal,...lbn->...nb", chris, chris)
+    # fourth = torch.einsum("...abl,...lan->...nb", chris, chris)
+
+    ricci_tensor = first - second + third - fourth
+
+    return ricci_tensor
 
 
 def scalcurvfromric(x: torch.Tensor, feature_map: nn.Module) -> torch.Tensor:
@@ -256,17 +273,33 @@ def scalcurvfromric(x: torch.Tensor, feature_map: nn.Module) -> torch.Tensor:
 
     ric = ricci(x, feature_map)
 
-    result = torch.einsum("...dmn,...dmn->d", metinv, ric)
+    result = torch.einsum("...mn,...mn->...", metinv, ric)
     return result
 
 
-# ============= unused =============
-# ##### batch functions not currently in use
-# def batch_jacobian(f, x):
-#     f_sum = lambda x: torch.sum(f(x), axis=0)
-#     return fnc.jacobian(f_sum, x,create_graph=True)
+def scalcurv_shallow(x: torch.Tensor, feature_map: nn.Module) -> torch.Tensor:
+    """
+    this is a simplified formula for neural network with just one single hidden layer
 
-# def batch_hessian(f, x):
-#     f_sum = lambda x: torch.sum(f(x), axis=0)
-#     return torch.sum(fnc.hessian(f_sum, x,create_graph=True),axis=2)
-# #####
+    :math: R = -3/4 g^{m,a}g^{n,b}g^{r,l}(
+    :math:    \partial_a g_{m, r} \partial_b g_{n, l}
+    :math:  - \partial_b g_{m, r} \partial_a g_{n, l})
+    """
+    met = metric(x, feature_map).squeeze()
+    metinv = torch.linalg.pinv(met, hermitian=True, rtol=TOLS)
+
+    deriv = (
+        batch_jacobian(lambda g: metric(g, feature_map), x)
+        .squeeze()
+        .permute(2, 1, 0, 3)  # move batch dimension to front
+    )
+
+    # split the parenthesis and apply einsum to each
+    first_part = torch.einsum(
+        "...ma,...nb,...rl,...mra,...nlb->...", metinv, metinv, metinv, deriv, deriv
+    )
+    second_part = torch.einsum(
+        "...ma,...nb,...rl,...mrb,...nla->...", metinv, metinv, metinv, deriv, deriv
+    )
+    result = -3 / 4 * (first_part - second_part)
+    return result
